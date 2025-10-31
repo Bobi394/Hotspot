@@ -6,9 +6,10 @@
   <title>WLAN-Zugriff anfragen</title>
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:20px;background:#0b1220;color:#e6eef8}
-    .card{background:#0f1724;padding:18px;border-radius:12px;max-width:640px;margin:24px auto}
+    .card{background:#0f1724;padding:18px;border-radius:12px;max-width:640px;margin:24px auto;text-align:center}
     button{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
     .wait{opacity:0.9}
+    .adminBtn{margin-top:20px;background:#172a4d;color:#e6eef8;}
   </style>
 </head>
 <body>
@@ -24,6 +25,9 @@
     <div id="passwordBox" style="display:none;margin-top:14px;padding:12px;background:#071233;border-radius:8px">
       <strong>WLAN-Passwort:</strong> <span id="pwd" style="font-family:monospace;margin-left:8px"></span>
     </div>
+
+    <!-- Neuer Button zum Admin-Bereich -->
+    <button class="adminBtn" onclick="window.location.href='admin.html'">Zum Admin-Bereich 🛠️</button>
   </div>
 
   <!-- Firebase SDKs -->
