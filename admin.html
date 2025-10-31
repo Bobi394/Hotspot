@@ -1,193 +1,129 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>WLAN Admin - Anfragen</title>
-  <style>
-    :root{--bg:#0b1220;--card:#0f1724;--muted:#9fb0c8;--accent:#3b82f6}
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#e6eef8;margin:0;padding:20px;min-height:100vh}
-    .wrap{max-width:800px;margin:18px auto}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
-    h1{margin:0 0 8px 0;font-size:1.4rem}
-    input[type="password"]{width:70%;padding:10px;border-radius:8px;border:1px solid #233;background:#071229;color:inherit;font-size:1rem}
-    button{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-    .btn-login{background:var(--accent);color:#fff;margin-left:8px}
-    .btn-logout{background:#172a4d;color:#e6eef8;margin-top:12px}
-    .item{border:1px solid #1f2b3f;padding:12px;border-radius:8px;margin-bottom:10px;background:linear-gradient(0deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01))}
-    .meta{color:var(--muted);font-size:0.9rem;margin-bottom:6px}
-    .actions{margin-top:8px}
-    .allow{background:#27ae60;color:white;margin-right:8px}
-    .deny{background:#e74c3c;color:white}
-    .empty{color:var(--muted);padding:12px;text-align:center}
-    .status-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-weight:700;background:#112233;color:#aee}
-    .top-help{color:var(--muted);font-size:0.95rem;margin-bottom:12px}
-    footer{opacity:0.8;margin-top:12px;font-size:0.85rem;color:var(--muted)}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WLAN Admin</title>
+<style>
+  body { font-family: sans-serif; background:#0b1220; color:#e6eef8; margin:0; padding:20px; }
+  .card { background:#0f1724; padding:20px; border-radius:12px; max-width:600px; margin:20px auto; }
+  input[type="password"] { padding:10px; border-radius:8px; border:1px solid #233; width:65%; background:#071229; color:#e6eef8; }
+  button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; margin-left:6px; }
+  .btn-login { background:#3b82f6; color:#fff; }
+  .btn-logout { background:#172a4d; color:#e6eef8; margin-top:12px; }
+  .item { background:#112233; border:1px solid #1f2b3f; border-radius:8px; padding:12px; margin-bottom:10px; }
+  .allow { background:#27ae60; color:white; margin-right:8px; }
+  .deny { background:#e74c3c; color:white; margin-right:8px; }
+  .empty { color:#9fb0c8; padding:12px; text-align:center; }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div id="loginCard" class="card" aria-live="polite">
-      <h1>🔐 Admin Login</h1>
-      <p class="top-help">Gib das Admin-Passwort ein, um die ankommenden WLAN-Anfragen zu sehen.</p>
-      <input type="password" id="adminPass" placeholder="Admin Passwort" />
-      <button id="loginBtn" class="btn-login">Anmelden</button>
-      <p id="loginMsg" style="color:#f88;margin-top:10px"></p>
-    </div>
 
-    <div id="adminCard" class="card" style="display:none">
-      <h1>📥 Offene WLAN-Anfragen</h1>
-      <p class="top-help">Neue Anfragen erscheinen live. Klicke auf <strong>Zulassen</strong> oder <strong>Ablehnen</strong>.</p>
-      <div id="list"><div class="empty">Lade…</div></div>
-      <button class="btn-logout" id="logoutBtn">Abmelden</button>
-      <footer>Skipi 🦎 — Adminbereich</footer>
-    </div>
-  </div>
+<div id="loginCard" class="card">
+  <h2>🔐 Admin Login</h2>
+  <input type="password" id="adminPass" placeholder="Passwort">
+  <button class="btn-login" onclick="login()">Anmelden</button>
+  <p id="loginMsg" style="color:#f88; margin-top:10px;"></p>
+</div>
 
-  <!-- Firebase SDKs (compat für einfachen Code) -->
-  <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
+<div id="adminCard" class="card" style="display:none;">
+  <h2>📥 Offene WLAN-Anfragen</h2>
+  <div id="list"><div class="empty">Warte auf Anfragen…</div></div>
+  <button class="btn-logout" onclick="logout()">Abmelden</button>
+</div>
 
-  <script>
-    // ====== DEINE FIREBASE CONFIG (bereits eingetragen) ======
-    const firebaseConfig = {
-      apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
-      authDomain: "hotspot-9bd24.firebaseapp.com",
-      databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "hotspot-9bd24",
-      storageBucket: "hotspot-9bd24.appspot.com",
-      messagingSenderId: "308452292161",
-      appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
-      measurementId: "G-G8R267J80E"
-    };
-    // =========================================================
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
 
-    // === Admin-Passwort wurde auf deinen Wunsch gesetzt ===
-    const ADMIN_PASSWORD = "Oskar123";
-    // ===================================================
+<script>
+  // Firebase-Konfiguration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
+    authDomain: "hotspot-9bd24.firebaseapp.com",
+    databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "hotspot-9bd24",
+    storageBucket: "hotspot-9bd24.appspot.com",
+    messagingSenderId: "308452292161",
+    appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
+    measurementId: "G-G8R267J80E"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    // init firebase (sicherstellen, dass nicht mehrfach init)
-    if (!window.firebase.apps || window.firebase.apps.length === 0) {
-      firebase.initializeApp(firebaseConfig);
+  // Admin-Passwort
+  const ADMIN_PASSWORD = "Oskar123";
+
+  // UI-Elemente
+  const loginCard = document.getElementById('loginCard');
+  const adminCard = document.getElementById('adminCard');
+  const adminPassInput = document.getElementById('adminPass');
+  const loginMsg = document.getElementById('loginMsg');
+  const listEl = document.getElementById('list');
+
+  let requestsRef = null;
+
+  // Login-Funktion
+  function login(){
+    const val = adminPassInput.value;
+    if(val === ADMIN_PASSWORD){
+      loginMsg.textContent = '';
+      loginCard.style.display = 'none';
+      adminCard.style.display = 'block';
+      startListening();
+    } else {
+      loginMsg.textContent = '❌ Falsches Passwort';
     }
-    const db = firebase.database();
+  }
 
-    // UI Elemente
-    const loginCard = document.getElementById('loginCard');
-    const adminCard = document.getElementById('adminCard');
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const loginMsg = document.getElementById('loginMsg');
-    const adminPassInput = document.getElementById('adminPass');
-    const listEl = document.getElementById('list');
+  // Logout
+  function logout(){
+    stopListening();
+    adminPassInput.value = '';
+    adminCard.style.display = 'none';
+    loginCard.style.display = 'block';
+  }
 
-    let requestsRef = null;
-    let onValueListener = null;
-
-    loginBtn.addEventListener('click', () => {
-      const v = adminPassInput.value || '';
-      if (v === ADMIN_PASSWORD) {
-        loginMsg.textContent = '';
-        loginCard.style.display = 'none';
-        adminCard.style.display = 'block';
-        startListening();
-      } else {
-        loginMsg.textContent = '❌ Falsches Passwort';
-      }
+  // Firebase Listener starten
+  function startListening(){
+    listEl.innerHTML = '<div class="empty">Warte auf Anfragen…</div>';
+    requestsRef = db.ref('requests');
+    requestsRef.on('value', snapshot => {
+      const data = snapshot.val();
+      renderRequests(data);
     });
+  }
 
-    logoutBtn.addEventListener('click', () => {
-      stopListening();
-      adminPassInput.value = '';
-      adminCard.style.display = 'none';
-      loginCard.style.display = 'block';
-    });
+  function stopListening(){
+    if(requestsRef) requestsRef.off();
+  }
 
-    function startListening() {
-      listEl.innerHTML = '<div class="empty">Warte auf Anfragen…</div>';
-      requestsRef = db.ref('requests');
-      // live listener
-      onValueListener = requestsRef.on('value', snapshot => {
-        const data = snapshot.val();
-        console.log('📡 Firebase requests:', data);
-        renderRequests(data);
-      }, err => {
-        console.error('Fehler beim Lesen der Requests:', err);
-        listEl.innerHTML = '<div class="empty">Fehler beim Laden. Schau in die Konsole.</div>';
-      });
+  function renderRequests(data){
+    listEl.innerHTML = '';
+    if(!data){
+      listEl.innerHTML = '<div class="empty">Keine Anfragen 🙌</div>';
+      return;
     }
-
-    function stopListening() {
-      if (requestsRef && onValueListener) {
-        requestsRef.off('value', onValueListener);
-      }
-      requestsRef = null;
-      onValueListener = null;
+    for(const [id, req] of Object.entries(data)){
+      const div = document.createElement('div');
+      div.className = 'item';
+      const name = req.name || 'Unbekannt';
+      const ts = req.ts ? new Date(req.ts).toLocaleString() : '—';
+      const status = req.status || 'pending';
+      div.innerHTML = `
+        <strong>${name}</strong> <small>${ts}</small><br>
+        Status: ${status}<br>
+        <button class="allow" onclick="updateStatus('${id}','allowed')">Zulassen ✅</button>
+        <button class="deny" onclick="updateStatus('${id}','denied')">Ablehnen ❌</button>
+      `;
+      listEl.appendChild(div);
     }
+  }
 
-    function renderRequests(data) {
-      listEl.innerHTML = '';
-      if (!data) {
-        listEl.innerHTML = '<div class="empty">Keine Anfragen 🙌</div>';
-        return;
-      }
-      // sortiere nach timestamp (älteste zuerst)
-      const entries = Object.entries(data).sort((a,b) => {
-        const ta = a[1].ts || 0;
-        const tb = b[1].ts || 0;
-        return ta - tb;
-      });
-      for (const [id, req] of entries) {
-        const item = document.createElement('div');
-        item.className = 'item';
-        const name = req.name || 'Unbekannt';
-        const ts = req.ts ? new Date(req.ts).toLocaleString() : '—';
-        const status = req.status || 'pending';
-        item.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <strong>${escapeHtml(name)}</strong>
-              <div class="meta">${ts}</div>
-            </div>
-            <div>
-              <span class="status-badge">${escapeHtml(status)}</span>
-            </div>
-          </div>
-          <div style="margin-top:8px">${req.note ? `<em>${escapeHtml(req.note)}</em>` : ''}</div>
-          <div class="actions">
-            <button class="allow" onclick="updateStatus('${id}','allowed')">Zulassen ✅</button>
-            <button class="deny" onclick="updateStatus('${id}','denied')">Ablehnen ❌</button>
-            <button style="margin-left:8px;background:#444;color:#fff" onclick="removeRequest('${id}')">Löschen 🗑️</button>
-          </div>
-        `;
-        listEl.appendChild(item);
-      }
-    }
+  function updateStatus(id, status){
+    db.ref('requests/' + id + '/status').set(status);
+  }
+</script>
 
-    // Update status in DB
-    function updateStatus(id, newStatus) {
-      db.ref('requests/' + id + '/status').set(newStatus)
-        .then(() => console.log('Status gesetzt', id, newStatus))
-        .catch(e => console.error('Fehler beim Setzen des Status:', e));
-    }
-
-    // Entfernen (optional)
-    function removeRequest(id) {
-      if (!confirm('Sicher: Anfrage löschen?')) return;
-      db.ref('requests/' + id).remove()
-        .then(()=> console.log('Anfrage gelöscht', id))
-        .catch(e => console.error('Fehler beim Löschen:', e));
-    }
-
-    // kleine Hilfsfunktion: HTML escapen
-    function escapeHtml(s) {
-      if (!s) return '';
-      return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    }
-
-    // Expose functions so buttons' onclick can call them
-    window.updateStatus = updateStatus;
-    window.removeRequest = removeRequest;
-  </script>
 </body>
 </html>
