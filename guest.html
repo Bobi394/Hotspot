@@ -1,92 +1,69 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>WLAN-Zugriff anfragen</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:20px;background:#0b1220;color:#e6eef8}
-    .card{background:#0f1724;padding:18px;border-radius:12px;max-width:640px;margin:24px auto;text-align:center}
-    button{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-    .wait{opacity:0.9}
-    .adminBtn{margin-top:20px;background:#172a4d;color:#e6eef8;}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WLAN Gast-Anfrage</title>
+<style>
+  body { font-family: sans-serif; background:#0b1220; color:#e6eef8; margin:0; padding:20px; }
+  .card { background:#0f1724; padding:20px; border-radius:12px; max-width:600px; margin:20px auto; text-align:center; }
+  input { padding:10px; border-radius:8px; border:1px solid #233; width:70%; margin-bottom:12px; background:#071229; color:#e6eef8; }
+  button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; background:#3b82f6; color:#fff; }
+  p { margin-top:12px; }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h2>WLAN-Zugriff anfragen 🦎</h2>
-    <p id="info">Klicke auf „Anfrage senden“ — der Besitzer muss zulassen.</p>
-    <input id="name" placeholder="Dein Name (z.B. Max)" style="padding:8px;border-radius:6px;border:1px solid #233;" />
-    <div style="margin-top:12px;">
-      <button id="reqBtn">Anfrage senden</button>
-    </div>
-    <p class="wait" id="status" style="margin-top:12px"></p>
 
-    <div id="passwordBox" style="display:none;margin-top:14px;padding:12px;background:#071233;border-radius:8px">
-      <strong>WLAN-Passwort:</strong> <span id="pwd" style="font-family:monospace;margin-left:8px"></span>
-    </div>
+<div class="card">
+  <h2>📶 WLAN Anfrage</h2>
+  <input type="text" id="guestName" placeholder="Dein Name">
+  <br>
+  <button onclick="sendRequest()">Anfrage senden</button>
+  <p id="statusMsg"></p>
+</div>
 
-    <!-- Neuer Button zum Admin-Bereich -->
-    <button class="adminBtn" onclick="window.location.href='admin.html'">Zum Admin-Bereich 🛠️</button>
-  </div>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
+<script>
+  // ==================== FIREBASE CONFIG ====================
+  const firebaseConfig = {
+    apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
+    authDomain: "hotspot-9bd24.firebaseapp.com",
+    databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "hotspot-9bd24",
+    storageBucket: "hotspot-9bd24.appspot.com",
+    messagingSenderId: "308452292161",
+    appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
+    measurementId: "G-G8R267J80E"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-  <script>
-    // ==== Firebase-Konfiguration ====
-    const firebaseConfig = {
-      apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
-      authDomain: "hotspot-9bd24.firebaseapp.com",
-      databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "hotspot-9bd24",
-      storageBucket: "hotspot-9bd24.firebasestorage.app",
-      messagingSenderId: "308452292161",
-      appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
-      measurementId: "G-G8R267J80E"
-    };
-    // ======================================
-
-    // ==== WLAN-Passwort hier eintragen ====
-    const HOTSPOT_PASSWORD = "DEIN_WLAN_PASSWORT";
-    // ======================================
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const reqBtn = document.getElementById('reqBtn');
-    const status = document.getElementById('status');
-    const nameInput = document.getElementById('name');
-    const pwdBox = document.getElementById('passwordBox');
-    const pwdSpan = document.getElementById('pwd');
-
-    function makeId() {
-      return 'r_' + Math.random().toString(36).slice(2,10);
+  function sendRequest(){
+    const name = document.getElementById('guestName').value.trim();
+    if(!name){
+      document.getElementById('statusMsg').textContent = '❌ Bitte gib deinen Namen ein';
+      return;
     }
 
-    reqBtn.addEventListener('click', async () => {
-      const name = nameInput.value.trim() || 'Unbekannt';
-      const id = makeId();
-      const reqRef = db.ref('requests/' + id);
-      const payload = {
-        name,
-        ts: Date.now(),
-        status: 'pending'
-      };
-      await reqRef.set(payload);
-      status.textContent = 'Anfrage gesendet — warte auf Freigabe... ⏳';
-      db.ref('requests/' + id + '/status').on('value', snap => {
-        const v = snap.val();
-        if (v === 'allowed') {
-          status.textContent = 'Zugriff gewährt ✅';
-          pwdSpan.textContent = HOTSPOT_PASSWORD;
-          pwdBox.style.display = 'block';
-        } else if (v === 'denied') {
-          status.textContent = 'Zugriff abgelehnt ❌';
-        }
-      });
+    const uniqueId = Date.now(); // eindeutige ID
+    db.ref('requests/' + uniqueId).set({
+      name: name,
+      ts: Date.now(),
+      status: 'pending'
+    })
+    .then(()=>{
+      document.getElementById('statusMsg').textContent = '✅ Anfrage gesendet! Warte auf Admin-Zulassung.';
+      document.getElementById('guestName').value = '';
+    })
+    .catch((err)=>{
+      console.error(err);
+      document.getElementById('statusMsg').textContent = '❌ Fehler beim Senden';
     });
-  </script>
+  }
+</script>
+
 </body>
 </html>
