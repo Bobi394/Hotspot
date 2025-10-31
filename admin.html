@@ -2,18 +2,18 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>WLAN Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login</title>
 <style>
   body { font-family: sans-serif; background:#0b1220; color:#e6eef8; margin:0; padding:20px; }
   .card { background:#0f1724; padding:20px; border-radius:12px; max-width:600px; margin:20px auto; }
-  input[type="password"] { padding:10px; border-radius:8px; border:1px solid #233; width:65%; background:#071229; color:#e6eef8; }
+  input[type="password"] { padding:10px; border-radius:8px; border:1px solid #233; width:60%; background:#071229; color:#e6eef8; }
   button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; margin-left:6px; }
   .btn-login { background:#3b82f6; color:#fff; }
   .btn-logout { background:#172a4d; color:#e6eef8; margin-top:12px; }
   .item { background:#112233; border:1px solid #1f2b3f; border-radius:8px; padding:12px; margin-bottom:10px; }
   .allow { background:#27ae60; color:white; margin-right:8px; }
-  .deny { background:#e74c3c; color:white; margin-right:8px; }
+  .deny { background:#e74c3c; color:white; }
   .empty { color:#9fb0c8; padding:12px; text-align:center; }
 </style>
 </head>
@@ -37,7 +37,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
 
 <script>
-  // Firebase-Konfiguration
+  // ==================== FIREBASE ====================
   const firebaseConfig = {
     apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
     authDomain: "hotspot-9bd24.firebaseapp.com",
@@ -51,10 +51,10 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // Admin-Passwort
+  // ==================== ADMIN PASSWORT ====================
   const ADMIN_PASSWORD = "Oskar123";
 
-  // UI-Elemente
+  // ==================== UI ELEMENTE ====================
   const loginCard = document.getElementById('loginCard');
   const adminCard = document.getElementById('adminCard');
   const adminPassInput = document.getElementById('adminPass');
@@ -63,29 +63,28 @@
 
   let requestsRef = null;
 
-  // Login-Funktion
-  function login(){
+  // ==================== LOGIN ====================
+  function login() {
     const val = adminPassInput.value;
     if(val === ADMIN_PASSWORD){
       loginMsg.textContent = '';
       loginCard.style.display = 'none';
       adminCard.style.display = 'block';
-      startListening();
+      loadRequests();
     } else {
       loginMsg.textContent = '❌ Falsches Passwort';
     }
   }
 
-  // Logout
-  function logout(){
-    stopListening();
+  function logout() {
+    if(requestsRef) requestsRef.off();
     adminPassInput.value = '';
     adminCard.style.display = 'none';
     loginCard.style.display = 'block';
   }
 
-  // Firebase Listener starten
-  function startListening(){
+  // ==================== FIREBASE REQUESTS ====================
+  function loadRequests() {
     listEl.innerHTML = '<div class="empty">Warte auf Anfragen…</div>';
     requestsRef = db.ref('requests');
     requestsRef.on('value', snapshot => {
@@ -94,11 +93,7 @@
     });
   }
 
-  function stopListening(){
-    if(requestsRef) requestsRef.off();
-  }
-
-  function renderRequests(data){
+  function renderRequests(data) {
     listEl.innerHTML = '';
     if(!data){
       listEl.innerHTML = '<div class="empty">Keine Anfragen 🙌</div>';
