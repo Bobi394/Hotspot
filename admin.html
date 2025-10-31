@@ -1,1 +1,99 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>WLAN Admin</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:14px;background:#071233;color:#e6eef8;text-align:center}
+    .item{background:#0f1724;padding:12px;border-radius:10px;margin:12px auto;max-width:500px;text-align:left}
+    button{padding:8px 10px;border-radius:8px;border:none;margin-left:8px;cursor:pointer}
+    #loginBox{margin-top:120px}
+    input{padding:10px;border-radius:8px;border:1px solid #333;background:#111;color:#e6eef8;font-size:1rem;text-align:center}
+  </style>
+</head>
+<body>
+  <h2>WLAN Admin 🦎</h2>
+  <div id="loginBox">
+    <p>Gib das Admin-Passwort ein, um fortzufahren:</p>
+    <input type="password" id="adminPass" placeholder="Admin-Passwort"/>
+    <div style="margin-top:12px;">
+      <button id="loginBtn">Anmelden</button>
+    </div>
+    <p id="loginMsg" style="color:#f88;"></p>
+  </div>
 
+  <div id="adminArea" style="display:none;">
+    <h3>Anfragen</h3>
+    <p>Neue Anfragen erscheinen hier in Echtzeit — tippe auf Zulassen/Ablehnen.</p>
+    <div id="list"></div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
+
+  <script>
+    // ==== Firebase-Konfiguration ====
+    const firebaseConfig = {
+      apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
+      authDomain: "hotspot-9bd24.firebaseapp.com",
+      databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "hotspot-9bd24",
+      storageBucket: "hotspot-9bd24.firebasestorage.app",
+      messagingSenderId: "308452292161",
+      appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
+      measurementId: "G-G8R267J80E"
+    };
+    // ======================================
+
+    // 🔐 Admin-Passwort hier eintragen:
+    const ADMIN_PASSWORD = "DEIN_ADMIN_PASSWORT";
+
+    const loginBox = document.getElementById('loginBox');
+    const adminArea = document.getElementById('adminArea');
+    const loginBtn = document.getElementById('loginBtn');
+    const adminPass = document.getElementById('adminPass');
+    const loginMsg = document.getElementById('loginMsg');
+
+    loginBtn.addEventListener('click', () => {
+      if (adminPass.value === ADMIN_PASSWORD) {
+        loginBox.style.display = 'none';
+        adminArea.style.display = 'block';
+        initFirebase();
+      } else {
+        loginMsg.textContent = "Falsches Passwort ❌";
+      }
+    });
+
+    function initFirebase() {
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      const list = document.getElementById('list');
+
+      const reqRef = db.ref('requests');
+      reqRef.on('value', snap => {
+        const data = snap.val() || {};
+        list.innerHTML = '';
+        const keys = Object.keys(data).sort((a,b)=> (data[a].ts||0)-(data[b].ts||0));
+        keys.forEach(k => {
+          const it = data[k];
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `<strong>${it.name}</strong> — ${new Date(it.ts).toLocaleTimeString()}<br/>
+            Status: <em>${it.status}</em>
+            <div style="margin-top:8px">
+              <button onclick="allow('${k}')">Zulassen ✅</button>
+              <button onclick="deny('${k}')">Ablehnen ❌</button>
+            </div>`;
+          list.appendChild(div);
+        });
+        if (keys.length===0) list.textContent = 'Keine Anfragen.';
+      });
+
+      window.allow = id => db.ref('requests/' + id + '/status').set('allowed');
+      window.deny = id => db.ref('requests/' + id + '/status').set('denied');
+    }
+  </script>
+</body>
+</html>
