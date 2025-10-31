@@ -3,30 +3,28 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>WLAN Admin</title>
+  <title>Admin-Bereich - WLAN Anfragen</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:14px;background:#071233;color:#e6eef8;text-align:center}
-    .item{background:#0f1724;padding:12px;border-radius:10px;margin:12px auto;max-width:500px;text-align:left}
-    button{padding:8px 10px;border-radius:8px;border:none;margin-left:8px;cursor:pointer}
-    #loginBox{margin-top:120px}
-    input{padding:10px;border-radius:8px;border:1px solid #333;background:#111;color:#e6eef8;font-size:1rem;text-align:center}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;background:#0b1220;color:#e6eef8;padding:20px;}
+    .card{background:#0f1724;padding:18px;border-radius:12px;max-width:640px;margin:24px auto;}
+    button{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-weight:700;margin:2px;}
+    .allow{background:#27ae60;color:white;}
+    .deny{background:#e74c3c;color:white;}
+    .logout{background:#172a4d;color:#e6eef8;margin-top:12px;}
   </style>
 </head>
 <body>
-  <h2>WLAN Admin 🦎</h2>
-  <div id="loginBox">
-    <p>Gib das Admin-Passwort ein, um fortzufahren:</p>
-    <input type="password" id="adminPass" placeholder="Admin-Passwort"/>
-    <div style="margin-top:12px;">
-      <button id="loginBtn">Anmelden</button>
-    </div>
-    <p id="loginMsg" style="color:#f88;"></p>
+  <div class="card" id="loginCard">
+    <h2>🔐 Admin Login</h2>
+    <input type="password" id="adminPass" placeholder="Admin Passwort" style="padding:8px;border-radius:6px;width:80%;"><br>
+    <button onclick="checkLogin()">Login</button>
+    <p id="loginStatus"></p>
   </div>
 
-  <div id="adminArea" style="display:none;">
-    <h3>Anfragen</h3>
-    <p>Neue Anfragen erscheinen hier in Echtzeit — tippe auf Zulassen/Ablehnen.</p>
-    <div id="list"></div>
+  <div class="card" id="adminCard" style="display:none;">
+    <h2>📋 Offene WLAN-Anfragen</h2>
+    <div id="list">Lade Anfragen...</div>
+    <button class="logout" onclick="logout()">Abmelden</button>
   </div>
 
   <!-- Firebase SDKs -->
@@ -40,59 +38,72 @@
       authDomain: "hotspot-9bd24.firebaseapp.com",
       databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "hotspot-9bd24",
-      storageBucket: "hotspot-9bd24.firebasestorage.app",
+      storageBucket: "hotspot-9bd24.appspot.com",
       messagingSenderId: "308452292161",
       appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
       measurementId: "G-G8R267J80E"
     };
     // ======================================
 
-    // 🔐 Admin-Passwort hier eintragen:
-    const ADMIN_PASSWORD = "Oskar3";
+    // Dein Admin-Passwort hier einstellen 🔒
+    const ADMIN_PASSWORD = "meinpasswort";
 
-    const loginBox = document.getElementById('loginBox');
-    const adminArea = document.getElementById('adminArea');
-    const loginBtn = document.getElementById('loginBtn');
-    const adminPass = document.getElementById('adminPass');
-    const loginMsg = document.getElementById('loginMsg');
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    loginBtn.addEventListener('click', () => {
-      if (adminPass.value === ADMIN_PASSWORD) {
-        loginBox.style.display = 'none';
-        adminArea.style.display = 'block';
-        initFirebase();
+    const loginCard = document.getElementById("loginCard");
+    const adminCard = document.getElementById("adminCard");
+    const loginStatus = document.getElementById("loginStatus");
+    const list = document.getElementById("list");
+
+    function checkLogin() {
+      const input = document.getElementById("adminPass").value;
+      if (input === ADMIN_PASSWORD) {
+        loginCard.style.display = "none";
+        adminCard.style.display = "block";
+        loadRequests();
       } else {
-        loginMsg.textContent = "Falsches Passwort ❌";
+        loginStatus.textContent = "❌ Falsches Passwort";
       }
-    });
+    }
 
-    function initFirebase() {
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.database();
-      const list = document.getElementById('list');
+    function logout() {
+      adminCard.style.display = "none";
+      loginCard.style.display = "block";
+      document.getElementById("adminPass").value = "";
+    }
 
-      const reqRef = db.ref('requests');
-      reqRef.on('value', snap => {
-        const data = snap.val() || {};
-        list.innerHTML = '';
-        const keys = Object.keys(data).sort((a,b)=> (data[a].ts||0)-(data[b].ts||0));
-        keys.forEach(k => {
-          const it = data[k];
-          const div = document.createElement('div');
-          div.className = 'item';
-          div.innerHTML = `<strong>${it.name}</strong> — ${new Date(it.ts).toLocaleTimeString()}<br/>
-            Status: <em>${it.status}</em>
-            <div style="margin-top:8px">
-              <button onclick="allow('${k}')">Zulassen ✅</button>
-              <button onclick="deny('${k}')">Ablehnen ❌</button>
-            </div>`;
+    function loadRequests() {
+      list.textContent = "Lade...";
+      const ref = db.ref("requests");
+      ref.on("value", snap => {
+        const data = snap.val();
+        list.innerHTML = "";
+        console.log("📡 Daten erhalten:", data);
+        if (!data) {
+          list.innerHTML = "<p>Keine offenen Anfragen 🙌</p>";
+          return;
+        }
+        for (const [id, req] of Object.entries(data)) {
+          const div = document.createElement("div");
+          div.style.marginBottom = "10px";
+          div.style.padding = "10px";
+          div.style.border = "1px solid #1f2b3f";
+          div.style.borderRadius = "8px";
+          div.innerHTML = `
+            <strong>${req.name}</strong><br>
+            <small>${new Date(req.ts).toLocaleString()}</small><br>
+            <span>Status: ${req.status}</span><br>
+            <button class="allow" onclick="updateStatus('${id}','allowed')">Zulassen</button>
+            <button class="deny" onclick="updateStatus('${id}','denied')">Ablehnen</button>
+          `;
           list.appendChild(div);
-        });
-        if (keys.length===0) list.textContent = 'Keine Anfragen.';
+        }
       });
+    }
 
-      window.allow = id => db.ref('requests/' + id + '/status').set('allowed');
-      window.deny = id => db.ref('requests/' + id + '/status').set('denied');
+    function updateStatus(id, status) {
+      db.ref("requests/" + id + "/status").set(status);
     }
   </script>
 </body>
