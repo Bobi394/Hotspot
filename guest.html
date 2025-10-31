@@ -27,7 +27,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
 
 <script>
-  // Firebase Config
+  // ==================== FIREBASE CONFIG ====================
   const firebaseConfig = {
     apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
     authDomain: "hotspot-9bd24.firebaseapp.com",
@@ -41,13 +41,15 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
+  // ==================== BUTTON FUNKTION ====================
   function sendRequest(){
     const name = document.getElementById('guestName').value.trim();
     if(!name){
       document.getElementById('statusMsg').textContent = '❌ Bitte gib deinen Namen ein';
       return;
     }
-    const uniqueId = Date.now(); // eindeutige ID
+
+    const uniqueId = Date.now(); // eindeutige ID für die Anfrage
     db.ref('requests/' + uniqueId).set({
       name: name,
       ts: Date.now(),
