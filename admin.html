@@ -11,74 +11,78 @@
   .allow { background:#27ae60; color:white; margin-right:8px; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
   .deny { background:#e74c3c; color:white; margin-right:8px; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
   .empty { color:#9fb0c8; padding:12px; text-align:center; }
+  input { padding:6px 8px; border-radius:6px; border:1px solid #233; margin-bottom:12px; width:50%; background:#071229; color:#e6eef8; }
 </style>
 </head>
 <body>
 
 <div class="card">
   <h2>📥 Offene WLAN-Anfragen</h2>
+  
+  <div style="margin-bottom:12px;">
+    <label>💻 Aktuelles WLAN-Passwort: </label>
+    <input type="text" id="adminPassword" placeholder="Passwort hier eingeben" value="Oskar123">
+  </div>
+  
   <div id="requestList"><div class="empty">Warte auf Anfragen…</div></div>
 </div>
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-  // ==================== FIREBASE CONFIG ====================
-  const firebaseConfig = {
-    apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
-    authDomain: "hotspot-9bd24.firebaseapp.com",
-    databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "hotspot-9bd24",
-    storageBucket: "hotspot-9bd24.firebasestorage.app",
-    messagingSenderId: "308452292161",
-    appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
-    measurementId: "G-G8R267J80E"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+const firebaseConfig = {
+  apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
+  authDomain: "hotspot-9bd24.firebaseapp.com",
+  databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "hotspot-9bd24",
+  storageBucket: "hotspot-9bd24.firebasestorage.app",
+  messagingSenderId: "308452292161",
+  appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
+  measurementId: "G-G8R267J80E"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  const container = document.getElementById("requestList");
+const container = document.getElementById("requestList");
 
-  // ==================== LIVE ANZEIGE ====================
-  db.ref("requests").on("value", (snapshot) => {
-    const data = snapshot.val();
-    container.innerHTML = ""; // Liste leeren
+db.ref("requests").on("value", (snapshot) => {
+  const data = snapshot.val();
+  container.innerHTML = "";
 
-    if (!data) {
-      container.innerHTML = '<div class="empty">Noch keine Anfragen 📭</div>';
-      return;
-    }
-
-    for (const key in data) {
-      const item = data[key];
-      // Nur offene Anfragen anzeigen
-      if (item.status === "pending") {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-          <strong>${item.name}</strong><br>
-          Status: ${item.status}<br>
-          <button class="allow" onclick="updateStatus('${key}','allowed')">Zulassen ✅</button>
-          <button class="deny" onclick="updateStatus('${key}','denied')">Ablehnen ❌</button>
-        `;
-        container.appendChild(div);
-      }
-    }
-
-    // Falls keine offenen Anfragen mehr da sind
-    const hasPending = Object.values(data).some(r => r.status === "pending");
-    if (!hasPending) {
-      container.innerHTML = '<div class="empty">Noch keine Anfragen 📭</div>';
-    }
-  });
-
-  // ==================== STATUS UPDATEN ====================
-  function updateStatus(id, status) {
-    db.ref("requests/" + id + "/status").set(status);
+  if (!data) {
+    container.innerHTML = '<div class="empty">Noch keine Anfragen 📭</div>';
+    return;
   }
-</script>
 
+  for (const key in data) {
+    const item = data[key];
+    if (item.status === "pending") {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <strong>${item.name}</strong><br>
+        Status: ${item.status}<br>
+        <button class="allow" onclick="updateStatus('${key}','allowed')">Zulassen ✅</button>
+        <button class="deny" onclick="updateStatus('${key}','denied')">Ablehnen ❌</button>
+      `;
+      container.appendChild(div);
+    }
+  }
+
+  const hasPending = Object.values(data).some(r => r.status === "pending");
+  if (!hasPending) {
+    container.innerHTML = '<div class="empty">Noch keine Anfragen 📭</div>';
+  }
+});
+
+function updateStatus(id, status) {
+  const pw = document.getElementById("adminPassword").value.trim() || "Oskar123";
+  db.ref("requests/" + id).update({
+    status: status,
+    password: status === "allowed" ? pw : ""
+  });
+}
+</script>
 </body>
 </html>
