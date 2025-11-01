@@ -20,12 +20,10 @@
   <div id="list"><div class="empty">Warte auf Anfragen…</div></div>
 </div>
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
 
 <script>
-  // Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
     authDomain: "hotspot-9bd24.firebaseapp.com",
@@ -42,7 +40,6 @@
   const listEl = document.getElementById('list');
 
   function loadRequests() {
-    listEl.innerHTML = '<div class="empty">Warte auf Anfragen…</div>';
     const requestsRef = db.ref('requests');
     requestsRef.on('value', snapshot => {
       const data = snapshot.val();
@@ -76,7 +73,6 @@
     db.ref('requests/' + id + '/status').set(status);
   }
 
-  // Direkt starten
   loadRequests();
 </script>
 
