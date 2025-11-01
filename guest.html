@@ -8,7 +8,8 @@
   body { font-family: Arial, sans-serif; background:#0b1220; color:#e6eef8; margin:0; padding:20px; }
   .card { background:#18223a; padding:20px; border-radius:12px; max-width:600px; margin:20px auto; text-align:center; }
   input { padding:10px; border-radius:8px; border:1px solid #233; width:70%; margin-bottom:12px; background:#071229; color:#e6eef8; }
-  button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; background:#3b82f6; color:#fff; }
+  button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; background:#3b82f6; color:#fff; margin-top:8px; }
+  p { margin-top:12px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -19,6 +20,7 @@
   <br>
   <button id="sendBtn">Anfrage senden</button>
   <p id="statusMsg"></p>
+  <p id="wifiPassword"></p>
 </div>
 
 <!-- Firebase SDKs -->
@@ -26,7 +28,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-  // === Firebase Konfiguration ===
+  // ==================== FIREBASE CONFIG ====================
   const firebaseConfig = {
     apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
     authDomain: "hotspot-9bd24.firebaseapp.com",
@@ -37,40 +39,56 @@
     appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
     measurementId: "G-G8R267J80E"
   };
-
-  // === Firebase starten ===
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // === Anfrage-Funktion ===
+  let currentRequestId = null;
+
+  // ==================== ANFRAGE SENDEN ====================
   document.getElementById("sendBtn").addEventListener("click", function() {
     const name = document.getElementById("guestName").value.trim();
     const msg = document.getElementById("statusMsg");
+    const wifi = document.getElementById("wifiPassword");
 
+    wifi.textContent = ""; // Passwort entfernen
     if (!name) {
       msg.textContent = "❌ Bitte gib deinen Namen ein.";
       return;
     }
 
     msg.textContent = "⏳ Anfrage wird gesendet...";
-    console.log("Sende Anfrage...");
-
     const uniqueId = Date.now();
+    currentRequestId = uniqueId;
+
     db.ref("requests/" + uniqueId).set({
       name: name,
       ts: new Date().toISOString(),
       status: "pending"
     })
     .then(() => {
-      msg.textContent = "✅ Anfrage erfolgreich gesendet!";
-      console.log("Gesendet!");
-      document.getElementById("guestName").value = "";
+      msg.textContent = "✅ Anfrage erfolgreich gesendet! Warte auf Admin-Zulassung.";
+      console.log("Anfrage gesendet!");
     })
     .catch(error => {
       console.error("🔥 Fehler:", error);
       msg.textContent = "❌ Fehler beim Senden.";
     });
   });
+
+  // ==================== STATUS CHECK ====================
+  setInterval(() => {
+    if (!currentRequestId) return;
+    db.ref("requests/" + currentRequestId).once("value").then(snapshot => {
+      const data = snapshot.val();
+      if (!data) return;
+      if (data.status === "allowed") {
+        document.getElementById("wifiPassword").textContent = "✅ WLAN Passwort: Oskar123";
+      } else if (data.status === "denied") {
+        document.getElementById("wifiPassword").textContent = "❌ Anfrage abgelehnt";
+      }
+    });
+  }, 2000);
 </script>
+
 </body>
 </html>
