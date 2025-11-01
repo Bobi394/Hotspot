@@ -20,14 +20,16 @@
   <br>
   <button onclick="sendRequest()">Anfrage senden</button>
   <p id="statusMsg"></p>
+
+  <button onclick="goToAdmin()" style="margin-top:15px; background:#f59e0b; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">
+    🛠️ Zum Admin-Bereich
+  </button>
 </div>
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
 
 <script>
-  // ==================== FIREBASE CONFIG ====================
   const firebaseConfig = {
     apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
     authDomain: "hotspot-9bd24.firebaseapp.com",
@@ -41,7 +43,6 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // ==================== BUTTON FUNKTION ====================
   function sendRequest(){
     const name = document.getElementById('guestName').value.trim();
     if(!name){
@@ -49,7 +50,7 @@
       return;
     }
 
-    const uniqueId = Date.now(); // eindeutige ID für die Anfrage
+    const uniqueId = Date.now();
     db.ref('requests/' + uniqueId).set({
       name: name,
       ts: Date.now(),
@@ -63,6 +64,10 @@
       console.error(err);
       document.getElementById('statusMsg').textContent = '❌ Fehler beim Senden';
     });
+  }
+
+  function goToAdmin(){
+    window.location.href = 'admin.html'; // Wenn Admin-Seite im gleichen Ordner liegt
   }
 </script>
 
