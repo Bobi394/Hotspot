@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WLAN Gast-Anfrage</title>
 <style>
-  body { font-family: sans-serif; background:#0b1220; color:#e6eef8; margin:0; padding:20px; }
-  .card { background:#0f1724; padding:20px; border-radius:12px; max-width:600px; margin:20px auto; text-align:center; }
+  body { font-family: Arial, sans-serif; background:#0b1220; color:#e6eef8; margin:0; padding:20px; }
+  .card { background:#18223a; padding:20px; border-radius:12px; max-width:600px; margin:20px auto; text-align:center; }
   input { padding:10px; border-radius:8px; border:1px solid #233; width:70%; margin-bottom:12px; background:#071229; color:#e6eef8; }
   button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; background:#3b82f6; color:#fff; }
-  p { margin-top:12px; }
 </style>
 </head>
 <body>
@@ -18,58 +17,60 @@
   <h2>📶 WLAN Anfrage</h2>
   <input type="text" id="guestName" placeholder="Dein Name">
   <br>
-  <button onclick="sendRequest()">Anfrage senden</button>
+  <button id="sendBtn">Anfrage senden</button>
   <p id="statusMsg"></p>
-
-  <button onclick="goToAdmin()" style="margin-top:15px; background:#f59e0b; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">
-    🛠️ Zum Admin-Bereich
-  </button>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.27.0/firebase-database-compat.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
+  // === Firebase Konfiguration ===
   const firebaseConfig = {
     apiKey: "AIzaSyDhTdfO1__2zuc5g7l1NWLTpANtKyJLXp8",
     authDomain: "hotspot-9bd24.firebaseapp.com",
     databaseURL: "https://hotspot-9bd24-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "hotspot-9bd24",
-    storageBucket: "hotspot-9bd24.appspot.com",
+    storageBucket: "hotspot-9bd24.firebasestorage.app",
     messagingSenderId: "308452292161",
     appId: "1:308452292161:web:d84312eb16f6eaef4038c0",
     measurementId: "G-G8R267J80E"
   };
+
+  // === Firebase starten ===
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  function sendRequest(){
-    const name = document.getElementById('guestName').value.trim();
-    if(!name){
-      document.getElementById('statusMsg').textContent = '❌ Bitte gib deinen Namen ein';
+  // === Anfrage-Funktion ===
+  document.getElementById("sendBtn").addEventListener("click", function() {
+    const name = document.getElementById("guestName").value.trim();
+    const msg = document.getElementById("statusMsg");
+
+    if (!name) {
+      msg.textContent = "❌ Bitte gib deinen Namen ein.";
       return;
     }
 
+    msg.textContent = "⏳ Anfrage wird gesendet...";
+    console.log("Sende Anfrage...");
+
     const uniqueId = Date.now();
-    db.ref('requests/' + uniqueId).set({
+    db.ref("requests/" + uniqueId).set({
       name: name,
-      ts: Date.now(),
-      status: 'pending'
+      ts: new Date().toISOString(),
+      status: "pending"
     })
-    .then(()=>{
-      document.getElementById('statusMsg').textContent = '✅ Anfrage gesendet! Warte auf Admin-Zulassung.';
-      document.getElementById('guestName').value = '';
+    .then(() => {
+      msg.textContent = "✅ Anfrage erfolgreich gesendet!";
+      console.log("Gesendet!");
+      document.getElementById("guestName").value = "";
     })
-    .catch((err)=>{
-      console.error(err);
-      document.getElementById('statusMsg').textContent = '❌ Fehler beim Senden';
+    .catch(error => {
+      console.error("🔥 Fehler:", error);
+      msg.textContent = "❌ Fehler beim Senden.";
     });
-  }
-
-  function goToAdmin(){
-    window.location.href = 'admin.html'; // Wenn Admin-Seite im gleichen Ordner liegt
-  }
+  });
 </script>
-
 </body>
 </html>
